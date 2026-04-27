@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ErTing - AI Audio Denoising</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 { color: #1a1a2e; text-align: center; margin-bottom: 10px; font-size: 2em; }
+        .version { text-align: center; color: #666; margin-bottom: 30px; font-size: 0.9em; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #333; font-weight: 500; }
+        input[type="file"], input[type="text"] {
+            width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; transition: border-color 0.3s;
+        }
+        input[type="file"]:focus, input[type="text"]:focus { outline: none; border-color: #4a90d9; }
+        .hint { font-size: 0.85em; color: #888; margin-top: 4px; }
+        button {
+            width: 100%; padding: 14px; background: linear-gradient(135deg, #4a90d9 0%, #357abd 100%);
+            color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(74,144,217,0.4); }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .status { margin-top: 20px; padding: 15px; border-radius: 8px; text-align: center; display: none; }
+        .status.success { background: #d4edda; color: #155724; display: block; }
+        .status.error { background: #f8d7da; color: #721c24; display: block; }
+        .status.loading { background: #cce5ff; color: #004085; display: block; }
+        .download-link {
+            display: inline-block; margin-top: 10px; padding: 10px 20px;
+            background: #28a745; color: white; text-decoration: none; border-radius: 6px; font-weight: 600;
+        }
+        .download-link:hover { background: #218838; }
+        .supported-formats { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; font-size: 0.9em; color: #666; }
+        .supported-formats strong { color: #333; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ErTing</h1>
+        <p class="version">AI Audio Denoising v{{ version }}</p>
+
+        <form id="denoiseForm">
+            <div class="form-group">
+                <label for="file">Select Audio/Video File</label>
+                <input type="file" id="file" name="file" accept="audio/*,video/*" required>
+            </div>
+
+            <div class="form-group">
+                <label for="model_name">Model (optional)</label>
+                <input type="text" id="model_name" name="model_name" placeholder="iic/speech_zipenhancer_ans_multiloss_16k_base">
+            </div>
+
+            <button type="submit" id="submitBtn">Start Denoising</button>
+        </form>
+
+        <div id="status" class="status"></div>
+
+        <div class="supported-formats">
+            <strong>Supported formats:</strong> MP3, WAV, MP4, AVI, MOV, M4A, FLAC, OGG, WMA, AAC
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('denoiseForm');
+        const status = document.getElementById('status');
+        const submitBtn = document.getElementById('submitBtn');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            status.className = 'status loading';
+            status.textContent = 'Processing... Please wait';
+            submitBtn.disabled = true;
+
+            const formData = new FormData(form);
+
+            try {
+                const response = await fetch('/api/denoise', { method: 'POST', body: formData });
+                const result = await response.json();
+
+                if (result.success) {
+                    status.className = 'status success';
+                    status.innerHTML = `
+                        <strong>Success!</strong><br>
+                        <a href="${result.download_url}" class="download-link" download="${result.filename}">
+                            Download ${result.filename}
+                        </a>
+                    `;
+                } else {
+                    status.className = 'status error';
+                    status.textContent = 'Error: ' + (result.error || 'Unknown error');
+                }
+            } catch (err) {
+                status.className = 'status error';
+                status.textContent = 'Error: ' + err.message;
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
