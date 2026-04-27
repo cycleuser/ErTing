@@ -218,3 +218,5 @@ __marimo__/
 .streamlit/secrets.toml
 *.mp4
 *.wav
+.DS_Store
+wechat.md
